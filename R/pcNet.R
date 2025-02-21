@@ -1,6 +1,9 @@
 #' @export pcNet
 #' @importFrom RSpectra svds
-#' @importFrom future.apply plan future_sapply
+#' @importFrom future.apply future_sapply
+#' @import future
+#' @import furrr
+#' @import RcppParallel
 #' @importFrom RhpcBLASctl omp_set_num_threads blas_set_num_threads
 #' @importFrom Matrix Matrix
 #' @importFrom pbapply pbsapply
@@ -109,7 +112,8 @@ pcNet <- function(X,
 
   # Parralelization fix (Shreyan Gupta)
   plan(multisession, workers = nCores)  # Parallelization strategy
-  B <- future_sapply(seq_len(n), pcCoefficients)
+  B <- do.call(cbind, future_map(seq_len(n), ~ pcCoefficients(.x), 
+                  .options = furrr_options(globals = FALSE)))
   
   # Transposition of the Beta coefficient matrix
   B <- t(B)

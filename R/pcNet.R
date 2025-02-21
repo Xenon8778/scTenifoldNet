@@ -1,5 +1,6 @@
 #' @export pcNet
 #' @importFrom RSpectra svds
+#' @importFrom future.apply plan future_sapply
 #' @importFrom RhpcBLASctl omp_set_num_threads blas_set_num_threads
 #' @importFrom Matrix Matrix
 #' @importFrom pbapply pbsapply
@@ -103,14 +104,12 @@ pcNet <- function(X,
   A <- 1 - diag(n)
   
   # Apply the principal component regression for each gene
-  RhpcBLASctl::omp_set_num_threads(nCores)
-  RhpcBLASctl::blas_set_num_threads(nCores)
-  
-  if(verbose){
-    B <- pbapply::pbsapply(seq_len(n), pcCoefficients)  
-  } else {
-    B <- sapply(seq_len(n), pcCoefficients)  
-  }
+  # RhpcBLASctl::omp_set_num_threads(nCores)
+  # RhpcBLASctl::blas_set_num_threads(nCores)
+
+  # Parralelization fix (Shreyan Gupta)
+  plan(multisession, workers = nCores)  # Parallelization strategy
+  B <- future_sapply(seq_len(n), pcCoefficients)
   
   # Transposition of the Beta coefficient matrix
   B <- t(B)
